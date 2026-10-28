@@ -138,7 +138,7 @@ canvas{display:block;border-radius:18px;box-shadow:0 10px 30px rgba(10,25,18,.28
     <h2>怎麼玩</h2>
     <p class="sub">每天一洞，全世界打同一洞——蛇形、直角、Z 字折返、馬蹄迴旋、分岔雙線，甚至水中孤島果嶺。</p>
     <p>按住螢幕任一處往後拖，像拉彈弓一樣瞄準，放開就擊球。拖得越長，打得越遠；虛線圈是預估落點。瞄準線會<b>左右晃動</b>，力道越大晃越兇——抓準回正的瞬間放手。</p>
-    <p>球在<b>果嶺上</b>會自動改成推桿，而且果嶺本身也可能是關卡：<b>旋轉果嶺</b>像唱盤一樣轉，推桿會被帶著畫螺旋；<b>守洞風車</b>在洞口掃來掃去；甚至<b>洞口自己會繞圈移動</b>。一般果嶺則有<b>坡度</b>——白色箭頭指向下坡，推桿會轉彎；球道落球區也有<b>坡面</b>。從<b>長草</b>擊球距離大減、瞄準更晃；落<b>水</b>罰一桿。球道上的<b>機關</b>：藍色旋轉風車（有的是十字雙臂）、金色浮遊哨兵、橫滾全場的紫色巨石都會把球打飛；紅色<b>雷射柵欄</b>亮起時碰到就被電停，燄滅的空檔快速通過；粉紅<b>彈菇</b>把球彈得更快；綠色<b>彈跳床</b>讓落下的球再彈飛一程；雙色<b>傳送門</b>把球瞬移到另一端——每一關都看時機。每天的<b>風</b>會吹偏飛行中的球。</p>
+    <p>球在<b>果嶺上</b>會自動改成推桿，而且果嶺本身也可能是關卡：<b>旋轉果嶺</b>像唱盤一樣轉，推桿會被帶著畫螺旋；<b>守洞風車</b>在洞口掃來掃去；甚至<b>洞口自己會繞圈移動</b>。一般果嶺則有<b>坡度</b>——白色箭頭指向下坡，推桿會轉彎；球道落球區也有<b>坡面</b>。從<b>長草</b>擊球距離大減、瞄準更晃；落<b>水</b>罰一桿。球道上的<b>機關</b>：藍色旋轉風車（有的是十字雙臂）、金色浮遊哨兵、橫滾全場的紫色巨石都會把球打飛；紅色<b>雷射柵欄</b>亮起時碰到就被電停，燄滅的空檔快速通過；粉紅<b>彈菇</b>把球彈得更快；綠色<b>彈跳床</b>讓落下的球再彈飛一程；雙色<b>傳送門</b>把球瞬移到另一端；橙色<b>彈簧</b>碰到會把球朝箭頭方向強力射出（可以借力超車）；螢光綠<b>彈力軌</b>像彈珠台邊牆，撞上去加速反彈——每一關都看時機。每天的<b>風</b>會吹偏飛行中的球。</p>
     <div class="legend">
       <span>🟩</span><span>球道</span>
       <span>🌿</span><span>長草</span>
@@ -217,7 +217,7 @@ function genHole(seed){
   function perpOf(pts,idx){var p0=pts[Math.max(0,idx-1)],p1=pts[Math.min(pts.length-1,idx+1)];var dx=p1.x-p0.x,dy=p1.y-p0.y,l=Math.sqrt(dx*dx+dy*dy)||1;return{x:-dy/l,y:dx/l}}
   function chaikin(pts,it){for(var c=0;c<it;c++){var out=[pts[0]];for(var k=0;k<pts.length-1;k++){var p=pts[k],q=pts[k+1];out.push({x:p.x*0.75+q.x*0.25,y:p.y*0.75+q.y*0.25});out.push({x:p.x*0.25+q.x*0.75,y:p.y*0.25+q.y*0.75})}out.push(pts[pts.length-1]);pts=out}return pts}
   function densify(pts,n){var lens=[0];for(var k=1;k<pts.length;k++)lens.push(lens[k-1]+dist(pts[k],pts[k-1]));var tot=lens[pts.length-1]||1,out=[],j2=0;for(var k2=0;k2<=n;k2++){var target=tot*k2/n;while(j2<pts.length-2&&lens[j2+1]<target)j2++;var seg=lens[j2+1]-lens[j2]||1,tt=(target-lens[j2])/seg;out.push({x:pts[j2].x+(pts[j2+1].x-pts[j2].x)*tt,y:pts[j2].y+(pts[j2+1].y-pts[j2].y)*tt})}return out}
-  var fhw=34+r()*12;
+  var fhw=46+r()*16;
   var greenR=44;
   var bend=(r()-0.5)*260;
   var mainPts=[],paths=[],ctrlRef=null,elbowC=null;
@@ -308,7 +308,7 @@ function genHole(seed){
   }
   /* Takeshi traps — 百戰百勝關卡 */
   var bunkers=[],trees=[];
-  var mills=[],patrols=[],boulders=[],lasers=[],tramps=[],portals=null,bumpers=[];
+  var mills=[],patrols=[],boulders=[],lasers=[],tramps=[],springs=[],rails=[],portals=null,bumpers=[];
   function trapAt(len){var ix=idxAt(len);return{p:samples[ix],v:perp(ix)}}
   var tk1=Math.floor(r()*4),tk2=Math.floor(r()*4);
   if(tk2===tk1)tk2=(tk1+1+Math.floor(r()*3))%4;
@@ -320,20 +320,44 @@ function genHole(seed){
   }
   addTrap(tk1,trapAt(115+r()*110));
   addTrap(tk2,trapAt(cum[cum.length-1]*0.52+r()*120));
-  if(r()<0.35){
+  var tk3=Math.floor(r()*4);
+  addTrap(tk3,trapAt(cum[cum.length-1]*0.74+r()*90));
+  if(r()<0.45){
     var aIdx=idxAt(120+r()*80),bIdxP=idxAt(cum[cum.length-1]-150-r()*80);
     var paP=perp(aIdx),pbP=perp(bIdxP);
     var pA={x:clamp(samples[aIdx].x+paP.x*(r()<0.5?1:-1)*(fhw+26),26,W-26),y:samples[aIdx].y,r:15};
     var pB2={x:clamp(samples[bIdxP].x+pbP.x*(r()<0.5?1:-1)*(fhw+26),26,W-26),y:samples[bIdxP].y,r:15};
     if(dist(pA,pB2)>150)portals={a:pA,b:pB2,cool:0};
   }
-  if(r()<0.55){
-    var tIx=idxAt(140+r()*(Math.max(120,L-260))),tp2=samples[tIx];
-    tramps.push({x:tp2.x,y:tp2.y,r:16});
-  }
   for(i=0;i<2;i++){
-    var bIdx3=idxAt(100+r()*(Math.max(120,L-220))),bp=samples[bIdx3],bv=perp(bIdx3);
-    bumpers.push({x:clamp(bp.x+bv.x*(r()<0.5?1:-1)*(fhw+14+r()*18),20,W-20),y:bp.y,r:11,hitT:-9});
+    if(r()<0.6){
+      var tIx=Math.min(samples.length-1,idxAt(120+i*160+r()*120));
+      tramps.push({x:samples[tIx].x,y:samples[tIx].y,r:16});
+    }
+  }
+  /* pinball springs — directional kickers */
+  for(i=0;i<2;i++){
+    var sIx=idxAt(90+r()*(Math.max(140,L-240))),sp0=samples[sIx],sv=perp(sIx);
+    var ssd=(i===0?1:-1)*(r()<0.3?-1:1);
+    var spg={x:clamp(sp0.x+sv.x*ssd*(fhw*0.75+r()*14),18,W-18),y:sp0.y,r:12,hitT:-9};
+    var aimIx=Math.min(samples.length-1,sIx+9);
+    spg.ang=Math.atan2(samples[aimIx].y-spg.y,samples[aimIx].x-spg.x);
+    springs.push(spg);
+  }
+  /* pinball rails — bouncy side walls */
+  for(i=0;i<2;i++){
+    if(r()<0.65){
+      var rIx=idxAt(120+r()*(Math.max(130,L-250))),rp0=samples[rIx],rv=perp(rIx);
+      var rsd=r()<0.5?1:-1;
+      var rcx=clamp(rp0.x+rv.x*rsd*(fhw+10),20,W-20),rcy=rp0.y;
+      var nIx=Math.min(samples.length-1,rIx+6);
+      var ra2=Math.atan2(samples[nIx].y-rp0.y,samples[nIx].x-rp0.x)+rsd*0.5;
+      rails.push({x1:rcx-Math.cos(ra2)*26,y1:rcy-Math.sin(ra2)*26,x2:rcx+Math.cos(ra2)*26,y2:rcy+Math.sin(ra2)*26,hitT:-9});
+    }
+  }
+  for(i=0;i<4;i++){
+    var bIdx3=idxAt(90+r()*(Math.max(140,L-200))),bp=samples[bIdx3],bv=perp(bIdx3);
+    bumpers.push({x:clamp(bp.x+bv.x*(r()<0.5?1:-1)*(r()*fhw),20,W-20),y:bp.y,r:10+r()*3,hitT:-9});
   }
   /* green trap */
   var gmr=r();
@@ -359,7 +383,7 @@ function genHole(seed){
   /* rough texture dots */
   var dots=[];
   for(i=0;i<110;i++)dots.push({x:r()*W,y:r()*H,s:1+r()*2});
-  return {arch:arch,cup:cup,tee:tee,samples:samples,paths:paths,L:L,par:par,fhw:fhw,greenR:greenR,greenSpin:greenSpin,cupOrbit:cupOrbit,water:water,bunkers:bunkers,mills:mills,patrols:patrols,boulders:boulders,lasers:lasers,tramps:tramps,portals:portals,bumpers:bumpers,wind:{ax:Math.cos(wang)*wspd,ay:Math.sin(wang)*wspd,spd:wspd,ang:wang},slope:slope,fslopes:fslopes,trees:trees,dots:dots};
+  return {arch:arch,cup:cup,tee:tee,samples:samples,paths:paths,L:L,par:par,fhw:fhw,greenR:greenR,greenSpin:greenSpin,cupOrbit:cupOrbit,water:water,bunkers:bunkers,mills:mills,patrols:patrols,boulders:boulders,lasers:lasers,tramps:tramps,springs:springs,rails:rails,portals:portals,bumpers:bumpers,wind:{ax:Math.cos(wang)*wspd,ay:Math.sin(wang)*wspd,spd:wspd,ang:wang},slope:slope,fslopes:fslopes,trees:trees,dots:dots};
 }
 function inWater(p,w){
   if(w.type==="ring"){var d=dist(p,w);return d>w.r0&&d<w.r1}
@@ -622,6 +646,37 @@ function machineHit(){
       return "bounce";
     }
   }
+  for(i=0;i<hole.springs.length;i++){
+    var sg=hole.springs[i];
+    if(gTime-sg.hitT<0.4)continue;
+    if(dist(ball,sg)<sg.r+R){
+      sg.hitT=gTime;
+      vx=Math.cos(sg.ang)*300;vy=Math.sin(sg.ang)*300;
+      mode="fly";flyLeft=0.4;
+      tone(200,0.05,"square",0.1);setTimeout(function(){tone(400,0.08,"square",0.1)},50);
+      try{if(navigator.vibrate)navigator.vibrate(25)}catch(e){}
+      toast("彈射！");
+      pushPoint();
+      return "spring";
+    }
+  }
+  for(i=0;i<hole.rails.length;i++){
+    var rl2=hole.rails[i];
+    var rsx=rl2.x2-rl2.x1,rsy=rl2.y2-rl2.y1;
+    var rpx=ball.x-rl2.x1,rpy=ball.y-rl2.y1;
+    var rt3=clamp((rpx*rsx+rpy*rsy)/((rsx*rsx+rsy*rsy)||1),0,1);
+    var rqx=rl2.x1+rsx*rt3,rqy=rl2.y1+rsy*rt3;
+    var rdx3=ball.x-rqx,rdy3=ball.y-rqy,rd3=Math.sqrt(rdx3*rdx3+rdy3*rdy3);
+    if(rd3<R+4){
+      rd3=rd3||1;
+      ball.x=rqx+rdx3/rd3*(R+5);ball.y=rqy+rdy3/rd3*(R+5);
+      var dot2=(vx*rdx3+vy*rdy3)/rd3;
+      vx=(vx-2*dot2*rdx3/rd3)*1.15;vy=(vy-2*dot2*rdy3/rd3)*1.15;
+      rl2.hitT=gTime;
+      tone(740,0.05,"sine",0.09);
+      return "bounce";
+    }
+  }
   if(hole.portals&&hole.portals.cool<=0){
     var PT=hole.portals,pr=[PT.a,PT.b];
     for(i=0;i<2;i++){
@@ -786,6 +841,7 @@ function step(dt){
     vx*=f;vy*=f;
     ball.x+=vx*dt;ball.y+=vy*dt;bounce();pushPoint();
     machineHit();
+    if(mode!=="roll")return;
     for(var ri=0;ri<hole.trees.length;ri++){
       var rt=hole.trees[ri];
       var rdx=ball.x-rt.x,rdy=ball.y-rt.y,rd=Math.sqrt(rdx*rdx+rdy*rdy);
@@ -1099,6 +1155,30 @@ function draw(){
     ctx.beginPath();ctx.arc(tb.x,tb.y,tb.r*0.55,0,6.283);ctx.stroke();
     ctx.beginPath();ctx.moveTo(tb.x-tb.r*0.6,tb.y);ctx.lineTo(tb.x+tb.r*0.6,tb.y);ctx.stroke();
     ctx.beginPath();ctx.moveTo(tb.x,tb.y-tb.r*0.6);ctx.lineTo(tb.x,tb.y+tb.r*0.6);ctx.stroke();
+  }
+  for(i=0;i<hole.springs.length;i++){
+    var sg2=hole.springs[i];
+    var comp=gTime-sg2.hitT<0.25?0.6:1;
+    ctx.save();
+    ctx.translate(sg2.x,sg2.y);ctx.rotate(sg2.ang);
+    ctx.strokeStyle="#FFB04A";ctx.lineWidth=3;ctx.lineCap="round";
+    for(var sc2=0;sc2<3;sc2++){
+      var ox=-8+sc2*6*comp;
+      ctx.beginPath();ctx.arc(ox,0,7,1.2,5.08);ctx.stroke();
+    }
+    ctx.fillStyle="#FFB04A";
+    ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(4,-6);ctx.lineTo(4,6);ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+  for(i=0;i<hole.rails.length;i++){
+    var rl3=hole.rails[i];
+    var hot=gTime-rl3.hitT<0.25;
+    ctx.strokeStyle=hot?"rgba(255,255,255,0.9)":"rgba(124,255,158,0.35)";
+    ctx.lineWidth=9;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(rl3.x1,rl3.y1);ctx.lineTo(rl3.x2,rl3.y2);ctx.stroke();
+    ctx.strokeStyle=hot?"#FFFFFF":"#7CFF9E";
+    ctx.lineWidth=3.5;
+    ctx.beginPath();ctx.moveTo(rl3.x1,rl3.y1);ctx.lineTo(rl3.x2,rl3.y2);ctx.stroke();
   }
   /* trails */
   ctx.strokeStyle=C.trail;ctx.lineWidth=2;ctx.setLineDash([]);
