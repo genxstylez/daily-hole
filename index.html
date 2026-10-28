@@ -1185,6 +1185,7 @@ document.getElementById("btnShare").addEventListener("click",function(){
   var st=S_get(STATK,{streak:0});
   var lines=["⛳ 每日一洞 #"+dayNum,useStrokes+" 桿 · Par "+hole.par+" · "+scoreLabel(diff),useEmo.join("")];
   if(st.streak>1)lines.push("🔥 連續 "+st.streak+" 天");
+  lines.push("genxstylez.github.io/daily-hole");
   var text=lines.join("\n");
   if(navigator.share){
     navigator.share({text:text}).catch(function(){copyText(text)});
