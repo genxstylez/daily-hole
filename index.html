@@ -83,6 +83,7 @@ canvas{display:block;border-radius:18px;box-shadow:0 10px 30px rgba(10,25,18,.28
 #stamp.hit{animation:stampIn .55s cubic-bezier(.2,1.6,.3,1) forwards}
 @keyframes stampIn{0%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}60%{opacity:1;transform:translate(-50%,-50%) scale(.95)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media (prefers-reduced-motion:reduce){#stamp.hit{animation:none;opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#fabResult{position:absolute;right:10px;bottom:10px;z-index:6;display:none;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer}
 .iconbtns{display:flex;gap:6px}
 .iconbtn{background:var(--pill);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:34px;height:34px;font-size:1rem;display:grid;place-items:center;cursor:pointer;padding:0}
 .modal{position:fixed;inset:0;background:var(--overlay);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
@@ -125,7 +126,7 @@ canvas{display:block;border-radius:18px;box-shadow:0 10px 30px rgba(10,25,18,.28
       </span>
     </div>
   </header>
-  <div id="stage"><canvas id="cv"></canvas><div id="stamp"></div></div>
+  <div id="stage"><canvas id="cv"></canvas><div id="stamp"></div><button id="fabResult">成績</button></div>
   <div id="hint">按住球場任一處，往後拖曳瞄準，放開擊球</div>
 </div>
 
@@ -171,6 +172,7 @@ canvas{display:block;border-radius:18px;box-shadow:0 10px 30px rgba(10,25,18,.28
     <div class="cd" id="rCd"></div>
     <div class="btnrow">
       <button class="btn primary" id="btnShare">分享成績</button>
+      <button class="btn" id="btnReplay">⟲ 觀看回放</button>
       <button class="btn" id="btnPractice">練習再玩（不計入紀錄）</button>
       <button class="btn" data-close>看球場</button>
     </div>
@@ -431,6 +433,7 @@ var vx=0,vy=0,mode="idle",flyLeft=0,lipped=false,aimT=0,shotPower=0;
 var strokes=0,emojis=[],shots=[],curShot=null,preShot=null;
 var cam={x:W/2,y:H/2,z:1},parts=[],gTime=0,stampShown=false;
 var cineDropped=false,cineType="sink",cineMeta=null,minDistCup=1e9,shotFromGreen=false;
+var rp=null;
 var cineConf=(function(){var rr=mulberry32(seed^0x9e37);var a=[];for(var i=0;i<26;i++)a.push({a:rr()*6.283,s:60+rr()*150,c:i%3===0?"#E7C76B":(i%3===1?"#FFFFFF":"#BFE8B0"),r:1.5+rr()*2.5});return a})();
 var practice=false,finished=false;
 var aim=null; /* {x0,y0,x,y} */
@@ -440,12 +443,14 @@ var sinkT=0;
 var DAYK="dh_day",STATK="dh_stats",SEENK="dh_seen";
 function saveProgress(){
   if(practice)return;
-  S_set(DAYK,{key:dayKey,num:dayNum,par:hole.par,strokes:strokes,emojis:emojis,ball:{x:ball.x,y:ball.y},done:finished});
+  var paths=shots.map(function(s){return s.filter(function(_,i){return i%2===0}).map(function(p){return[Math.round(p.x),Math.round(p.y)]})});
+  S_set(DAYK,{key:dayKey,num:dayNum,par:hole.par,strokes:strokes,emojis:emojis,ball:{x:ball.x,y:ball.y},done:finished,paths:paths});
 }
 function loadProgress(){
   var rec=S_get(DAYK,null);
   if(rec&&rec.key===dayKey){
     strokes=rec.strokes||0;emojis=rec.emojis||[];finished=!!rec.done;
+    if(rec.paths){shots=rec.paths.map(function(a){return a.map(function(q){return{x:q[0],y:q[1]}})})}
     if(rec.ball){ball.x=rec.ball.x;ball.y=rec.ball.y}
     if(finished){mode="done";showResult(false)}
   }
@@ -503,6 +508,7 @@ function tone(f,d,type,vol){
 
 /* ---------- input ---------- */
 cv.addEventListener("pointerdown",function(e){
+  if(mode==="replay"){e.preventDefault();endReplay();return}
   if(mode==="cine"){e.preventDefault();if(cineType==="sink"){sinkT=sinkT<1.5?1.5:3.21}else{sinkT=9}return}
   if(mode!=="idle")return;
   e.preventDefault();
@@ -613,6 +619,7 @@ function frame(ts){
 function camUpdate(dt){
   var tx=W/2,ty=H/2,tz=1;
   if(mode==="roll"&&dist(ball,hole.cup)<120&&Math.sqrt(vx*vx+vy*vy)<300){tx=(hole.cup.x+ball.x)/2;ty=(hole.cup.y+ball.y)/2;tz=1.8}
+  else if(mode==="replay"){tx=ball.x;ty=ball.y;tz=1.3}
   var hw=W/2/tz,hh=H/2/tz;
   tx=clamp(tx,hw,W-hw);ty=clamp(ty,hh,H-hh);
   var k=1-Math.pow(0.0015,dt);
@@ -743,7 +750,45 @@ function step(dt){
       if(sinkT>1.55&&!stampShown){stampShown=true;showStamp(cineMeta.hang?"掛在洞口！":"差一點！")}
       if(sinkT>2.6){hideStamp();mode="idle";updateHUD()}
     }
+  }else if(mode==="replay"&&rp){
+    if(rp.pause>0){rp.pause-=dt;if(rp.pause<=0)rpNext();return}
+    var path=shots[rp.si];
+    if(!path){endReplay();return}
+    rp.pi+=dt*60*2.4;
+    var idx=Math.floor(rp.pi);
+    if(idx>=path.length){
+      ball.x=path[path.length-1].x;ball.y=path[path.length-1].y;
+      rpLand();
+    }else{
+      ball.x=path[idx].x;ball.y=path[idx].y;
+    }
   }
+}
+function rpLand(){
+  var e=emojis[rp.si]||"";
+  if(e==="💦"){tone(200,0.2,"sine",0.08)}
+  else if(e==="🟡"){tone(240,0.07,"triangle",0.07)}
+  else if(e==="⛳"){
+    burst();
+    tone(523,0.1,"sine",0.1);setTimeout(function(){tone(784,0.2,"sine",0.1)},120);
+    showStamp(scoreLabel(strokes-hole.par));
+    document.getElementById("strokeTxt").textContent=strokes;
+    rp.pause=1.4;rp.endAfter=true;
+    return;
+  }else{tone(330,0.05,"triangle",0.05)}
+  document.getElementById("strokeTxt").textContent=Math.min(rp.si+1,strokes);
+  rp.pause=0.3;
+}
+function rpNext(){
+  if(rp.endAfter){endReplay();return}
+  rp.si++;rp.pi=0;
+  if(rp.si>=shots.length){endReplay();return}
+  ball.x=shots[rp.si][0].x;ball.y=shots[rp.si][0].y;
+}
+function endReplay(){
+  hideStamp();
+  rp=null;mode="done";
+  updateHUD();
 }
 
 /* ---------- drawing ---------- */
@@ -847,8 +892,14 @@ function draw(){
   ctx.beginPath();ctx.arc(hole.tee.x+9,hole.tee.y+9,3,0,6.283);ctx.fill();
   /* trails */
   ctx.strokeStyle=C.trail;ctx.lineWidth=2;ctx.setLineDash([]);
-  for(i=0;i<shots.length;i++)drawTrail(shots[i],0.45);
-  if(curShot)drawTrail(curShot,0.85);
+  if(mode==="replay"&&rp){
+    for(i=0;i<rp.si;i++)drawTrail(shots[i],0.45);
+    var rpp=shots[rp.si];
+    if(rpp)drawTrail(rpp.slice(0,Math.max(2,Math.floor(rp.pi))),0.9);
+  }else{
+    for(i=0;i<shots.length;i++)drawTrail(shots[i],0.45);
+    if(curShot)drawTrail(curShot,0.85);
+  }
   /* cup + flag */
   ctx.fillStyle="#123021";
   ctx.beginPath();ctx.arc(hole.cup.x,hole.cup.y,5.5,0,6.283);ctx.fill();
@@ -1093,7 +1144,9 @@ function updateHUD(){
   document.getElementById("strokeTxt").textContent=strokes;
   document.getElementById("parTxt").textContent=hole.par;
   var hint=document.getElementById("hint");
-  if(mode==="done"){hint.textContent=practice?"練習回合結束":"今日已完成，明天 00:00 換新球洞"}
+  document.getElementById("fabResult").style.display=mode==="done"?"block":"none";
+  if(mode==="replay"){hint.textContent="回放中 · 點一下跳過"}
+  else if(mode==="done"){hint.textContent=practice?"練習回合結束":"今日已完成，明天 00:00 換新球洞"}
   else if(terrainAt(ball)==="green"){hint.textContent="果嶺上：輕拖推桿進洞"}
   else{hint.textContent="按住球場任一處，往後拖曳瞄準，放開擊球"}
 }
@@ -1166,6 +1219,7 @@ function showResult(fresh,st){
   var sEl=document.getElementById("rStreak");
   if(isPractice){sEl.textContent="練習不計入紀錄"}
   else{sEl.textContent=stNow.streak>1?("🔥 連續 "+stNow.streak+" 天"):""}
+  document.getElementById("btnReplay").style.display=shots.length?"block":"none";
   clearInterval(cdTimer);
   cdTimer=setInterval(updateCd,1000);updateCd();
   openM("mResult");
@@ -1196,6 +1250,16 @@ function copyText(t){
     navigator.clipboard.writeText(t).then(function(){toast("已複製，貼到群組吧")},function(){toast("複製失敗，手動截圖分享")});
   }catch(e){toast("複製失敗，手動截圖分享")}
 }
+document.getElementById("btnReplay").addEventListener("click",function(){
+  if(!shots.length)return;
+  closeM("mResult");
+  rp={si:0,pi:0,pause:0};
+  mode="replay";
+  ball.x=shots[0][0].x;ball.y=shots[0][0].y;
+  hideStamp();
+  updateHUD();
+});
+document.getElementById("fabResult").addEventListener("click",function(){showResult(false)});
 document.getElementById("btnPractice").addEventListener("click",function(){
   closeM("mResult");
   practice=true;finished=false;
