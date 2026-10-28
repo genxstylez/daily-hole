@@ -206,7 +206,7 @@ var dayNum=Math.round((todayLocal-epoch)/864e5)+1;
 var dayKey=todayLocal.getFullYear()+"-"+String(todayLocal.getMonth()+1).padStart(2,"0")+"-"+String(todayLocal.getDate()).padStart(2,"0");
 var seed=(todayLocal.getFullYear()*10000+(todayLocal.getMonth()+1)*100+todayLocal.getDate())>>>0;
 document.getElementById("subTitle").textContent="#"+dayNum+" · "+dayKey;
-var BUILD="b15-rebalance";
+var BUILD="b16-safestart";
 document.getElementById("buildTag").textContent="build "+BUILD;
 
 /* ---------- hole generation ---------- */
@@ -318,12 +318,12 @@ function genHole(seed){
   var tk1=Math.floor(r()*4),tk2=Math.floor(r()*4);
   if(tk2===tk1)tk2=(tk1+1+Math.floor(r()*3))%4;
   function addTrap(kind,z){
-    if(kind===0){mills.push({x:z.p.x,y:z.p.y,len:30+r()*16,w:7,spd:(0.6+r()*0.6)*(r()<0.5?1:-1),ph:r()*6.283,arms:r()<0.4?2:1})}
+    if(kind===0){mills.push({x:z.p.x,y:z.p.y,len:Math.min(30+r()*16,fhw*0.82),w:7,spd:(0.6+r()*0.6)*(r()<0.5?1:-1),ph:r()*6.283,arms:r()<0.4?2:1})}
     else if(kind===1){patrols.push({cx:z.p.x,cy:z.p.y,dx:z.v.x,dy:z.v.y,range:fhw+30+r()*30,spd:0.8+r()*0.6,ph:r()*6.283,r:13})}
     else if(kind===2){boulders.push({y:z.p.y,spd:55+r()*38,dir:r()<0.5?1:-1,ph:r()*(W+80),r:16})}
     else{lasers.push({x:z.p.x,y:z.p.y,dx:z.v.x,dy:z.v.y,half:fhw+14+r()*14,spd:0.9+r()*0.7,ph:r()*6.283})}
   }
-  addTrap(tk1,trapAt(115+r()*110));
+  addTrap(tk1,trapAt(200+r()*110));
   addTrap(tk2,trapAt(cum[cum.length-1]*0.52+r()*120));
   if(r()<0.45){
     var aIdx=idxAt(120+r()*80),bIdxP=idxAt(cum[cum.length-1]-150-r()*80);
@@ -334,7 +334,7 @@ function genHole(seed){
   }
   for(i=0;i<2;i++){
     if(r()<0.6){
-      var tIx=Math.min(samples.length-1,idxAt(120+i*160+r()*120));
+      var tIx=Math.min(samples.length-1,idxAt(190+i*150+r()*110));
       tramps.push({x:samples[tIx].x,y:samples[tIx].y,r:16});
     }
   }
@@ -342,7 +342,7 @@ function genHole(seed){
   /* pinball rails — bouncy side walls */
   for(i=0;i<2;i++){
     if(r()<0.8){
-      var rIx=idxAt(120+r()*(Math.max(130,L-250))),rp0=samples[rIx],rv=perp(rIx);
+      var rIx=idxAt(180+r()*(Math.max(120,L-300))),rp0=samples[rIx],rv=perp(rIx);
       var rsd=r()<0.5?1:-1;
       var rcx=clamp(rp0.x+rv.x*rsd*(fhw-6),20,W-20),rcy=rp0.y;
       var nIx=Math.min(samples.length-1,rIx+6);
@@ -351,7 +351,7 @@ function genHole(seed){
     }
   }
   for(i=0;i<2;i++){
-    var bIdx3=idxAt(90+r()*(Math.max(140,L-200))),bp=samples[bIdx3],bv=perp(bIdx3);
+    var bIdx3=idxAt(180+r()*(Math.max(120,L-280))),bp=samples[bIdx3],bv=perp(bIdx3);
     bumpers.push({x:clamp(bp.x+bv.x*(r()<0.5?1:-1)*(r()*fhw*0.55),20,W-20),y:bp.y,r:10+r()*3,hitT:-9});
   }
   /* bunkers back — sand catchers */
